@@ -1,23 +1,17 @@
-FROM alpine:3.21.3
+FROM quay.io/projectquay/golang:1.17
 
-RUN ln -snf /usr/share/zoneinfo/America/Mexico_City /etc/localtime && \
-    echo "America/Mexico_City" > /etc/timezone
+ADD src/hello-world.go hello-world.go
 
-ENV LANG=en_US.UTF-8 \
-    LC_ALL=en_US.UTF-8 \
-    TZ=America/Mexico_City \
-    JAVA_HOME=/usr/lib/jvm/java-17-openjdk \
-    PATH=$JAVA_HOME/bin:$PATH
-    
-WORKDIR /app
+ENV MESSAGE "Welcome! You can change this message by replacing the MESSAGE environment variable."
+ENV HOME /go
 
-COPY target/prueba-1.0.0.jar /app/prueba-1.0.0.jar
+RUN chgrp -R 0 /go && chmod -R g+rwX /go
 
-RUN adduser -D -s /bin/bash jmlm && \
-    chown -R jmlm:jmlm /app && \
-    chmod 755 /app/prueba-1.0.0.jar
-USER jmlm
+EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl --fail http://localhost:8081 || exit 1
-CMD ["java", "-Duser.timezone=America/Mexico_City", "-jar", "/app/prueba-1.0.0.jar"]
+LABEL io.openshift.expose-services 8080/http
+
+USER 1001
+
+CMD go run hello-world.go
+# CMD pwd
